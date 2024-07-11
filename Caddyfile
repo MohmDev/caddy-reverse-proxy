@@ -5,59 +5,33 @@
     log {
         format json
     }
-    servers {
-        trusted_proxies static private_ranges
-    }
 }
 
-(lb_settings) {
-    lb_policy round_robin
-    lb_retries 100
-    lb_try_duration 10s
-    lb_try_interval 250ms
+:80 {
+    # Redirect admin.raverclub.com to https://admin.raverclub.com
+    @adminSubdomain host admin.raverclub.com
+    redir @adminSubdomain https://admin.raverclub.com{uri}
 }
 
-(passive_health_checks) {
-    fail_duration 60s
-    max_fails 300
-    unhealthy_latency 5s
-    unhealthy_request_count 200
-}
-
-:{$PORT} {
+https://admin.raverclub.com {
     log {
         format json
     }
-
-    handle_path /dashboard* {
-        reverse_proxy {
-            dynamic a {
-                name {$BACKEND_DOMAIN}
-                port {$BACKEND_PORT}
-                refresh 1s
-                dial_timeout 30s
-                versions ipv4 ipv6
-            }
-
+    # Handle all requests to this subdomain
+    handle {
+        reverse_proxy https://raverclub-engine.up.railway.app/dashboard* {
             import lb_settings
             import passive_health_checks
-            header_up Host {upstream_hostport}
+            # Rewrite the request to strip the subdomain part and only pass /dashboard
+            uri_strip_prefix /dashboard
         }
     }
+}
 
-    handle {
-        reverse_proxy {
-            dynamic a {
-                name {$FRONTEND_DOMAIN}
-                port {$FRONTEND_PORT}
-                refresh 1s
-                dial_timeout 30s
-                versions ipv4 ipv6
-            }
-
-            import lb_settings
-            import passive_health_checks
-            header_up Host {upstream_hostport}
-        }
+# Default handler for the main domain and other subdomains
+https://raverclub.com {
+    reverse_proxy https://{$FRONTEND_DOMAIN} {
+        import lb_settings
+        import passive_health_checks
     }
 }
