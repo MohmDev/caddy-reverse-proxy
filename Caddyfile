@@ -7,6 +7,20 @@
     }
 }
 
+(lb_settings) {
+    lb_policy round_robin
+    lb_retries 100
+    lb_try_duration 10s
+    lb_try_interval 250ms
+}
+
+(passive_health_checks) {
+    fail_duration 60s
+    max_fails 300
+    unhealthy_latency 5s
+    unhealthy_request_count 200
+}
+
 :80 {
     # Redirect admin.raverclub.com to https://admin.raverclub.com
     @adminSubdomain host admin.raverclub.com
