@@ -29,7 +29,7 @@
         format json
     }
 
-    handle_path /admin* {
+    handle_path /dashboard* {
         reverse_proxy {
             dynamic a {
                 name {$BACKEND_DOMAIN}
